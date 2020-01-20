@@ -16,7 +16,7 @@ public class LabServer {
 
     private static ExecutorService threadPool = Executors.newFixedThreadPool(5);
 
-    private static List<Fork> forks;
+    private static ArrayList<Fork> forks;
     private static Map<Integer, List<Fork>> distMap;
 
     public static void main(String[] args) {
@@ -76,4 +76,9 @@ public class LabServer {
         }
         outStream.flush();
     }
+
+    static synchronized int putOnTable(){
+
+    }
+
 }

@@ -17,7 +17,11 @@ public class Thinker {
         DataInputStream inp = new DataInputStream(socket.getInputStream());
         DataOutputStream out = new DataOutputStream(socket.getOutputStream());
         PrintStream cout = System.out;
-        int thinkerId = rand.nextInt(100);
+        out.writeInt(Code.Registrate.ordinal());
+        out.flush();
+        int thinkerId = inp.readInt();
+        int forkLeft = inp.readInt();
+        int forkRight = inp.readInt();
         for (int i = 0; i < ORDER_COUNT; i++) {
             boolean flag;
             do {

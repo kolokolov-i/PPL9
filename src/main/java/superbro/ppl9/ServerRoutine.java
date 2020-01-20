@@ -25,6 +25,9 @@ public class ServerRoutine implements Runnable {
                 int thinkerId = inStream.readInt();
                 Code command = Code.values()[inStream.readInt()];
                 switch(command){
+                    case Registrate:
+
+                        break;
                     case ReqLock:
                         LabServer.tryLock(thinkerId, outStream);
                         break;
