@@ -22,19 +22,24 @@ public class ServerRoutine implements Runnable {
         try {
             boolean flag = true;
             while (flag) {
-                int thinkerId = inStream.readInt();
+                int thinkerId = 0;
+                int forkId = 0;
                 Code command = Code.values()[inStream.readInt()];
                 switch(command){
-                    case Registrate:
-
+                    case REGISTRATE:
+                        LabServer.registrate(outStream);
                         break;
-                    case ReqLock:
-                        LabServer.tryLock(thinkerId, outStream);
+                    case REQ_GET:
+                        thinkerId = inStream.readInt();
+                        forkId = inStream.readInt();
+                        LabServer.tryLock(thinkerId, forkId, outStream);
                         break;
-                    case ReqRelease:
-                        LabServer.tryRelease(thinkerId, outStream);
+                    case REQ_RETURN:
+                        thinkerId = inStream.readInt();
+                        forkId = inStream.readInt();
+                        LabServer.tryRelease(thinkerId, forkId, outStream);
                         break;
-                    case Exit:
+                    case EXIT:
                         flag = false;
                         break;
                 }

@@ -1,5 +1,5 @@
 package superbro.ppl9;
 
 public enum Code {
-    ReqLock, ReqRelease, ResAccept, ResReject, Exit, Registrate
+    REQ_GET, REQ_RETURN, RES_ACCEPT, RES_REJECT, EXIT, REGISTRATE
 }

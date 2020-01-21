@@ -12,48 +12,58 @@ public class Thinker {
     private static final int ORDER_COUNT = 10;
     private static Random rand = new Random(System.currentTimeMillis());
 
+    private static DataOutputStream out;
+    private static int thinkerId, forkLeft, forkRight;
+
     public static void main(String[] args) throws IOException, InterruptedException {
         Socket socket = new Socket("127.0.0.1", 3232);
         DataInputStream inp = new DataInputStream(socket.getInputStream());
-        DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+        out = new DataOutputStream(socket.getOutputStream());
         PrintStream cout = System.out;
-        out.writeInt(Code.Registrate.ordinal());
-        out.flush();
-        int thinkerId = inp.readInt();
-        int forkLeft = inp.readInt();
-        int forkRight = inp.readInt();
+        send(Code.REGISTRATE, 0);
+        thinkerId = inp.readInt();
+        forkLeft = inp.readInt();
+        forkRight = inp.readInt();
         for (int i = 0; i < ORDER_COUNT; i++) {
             boolean flag;
             do {
                 cout.printf("Thinker %d думает\n", thinkerId);
                 Thread.sleep(rand.nextInt(500) + 500);
-                out.writeInt(thinkerId);
-                out.writeInt(Code.ReqLock.ordinal());
-                out.flush();
-                flag = Code.ResReject == Code.values()[inp.readInt()];
+                send(Code.REQ_GET, forkLeft);
+                flag = Code.RES_REJECT == Code.values()[inp.readInt()];
                 if(flag){
-                    cout.println("Объекты не достались");
+                    cout.println("Левая вилка не досталась");
                 }
             }
             while(flag);
-            String f1 = inp.readUTF();
-            String f2 = inp.readUTF();
-            cout.printf("Thinker %d взял объекты %s %s\n", thinkerId, f1, f2);
-            cout.printf("Thinker %d думает\n", thinkerId);
+            cout.println("Взял левую вилку");
+            do {
+                cout.printf("Thinker %d думает\n", thinkerId);
+                Thread.sleep(rand.nextInt(500) + 500);
+                send(Code.REQ_GET, forkRight);
+                flag = Code.RES_REJECT == Code.values()[inp.readInt()];
+                if(flag){
+                    cout.println("Правая вилка не досталась");
+                }
+            }
+            while(flag);
+            cout.println("Взял правую вилку");
+            cout.printf("Thinker %d кушает\n", thinkerId);
             Thread.sleep(rand.nextInt(500) + 500);
-            out.writeInt(thinkerId);
-            out.writeInt(Code.ReqRelease.ordinal());
-            out.flush();
-            if(Code.ResAccept.ordinal() == inp.readInt()){
-                cout.printf("Thinker %d освободил объекты\n", thinkerId);
-            }
-            else{
-                cout.printf("Не удалось освободить объекты\n");
-            }
+            send(Code.REQ_RETURN, forkLeft);
+            cout.printf("Thinker %d освободил левую вилку\n", thinkerId);
+            Thread.sleep(rand.nextInt(500) + 200);
+            send(Code.REQ_RETURN, forkRight);
+            cout.printf("Thinker %d освободил правую вилку\n", thinkerId);
         }
-        out.writeInt(thinkerId);
-        out.writeInt(Code.Exit.ordinal());
-        out.flush();
+        send(Code.EXIT, 0);
         socket.close();
+    }
+
+    private static void send(Code code, int data) throws IOException {
+        out.writeInt(code.ordinal());
+        out.writeInt(thinkerId);
+        out.writeInt(data);
+        out.flush();
     }
 }
