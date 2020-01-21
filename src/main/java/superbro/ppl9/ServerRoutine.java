@@ -8,10 +8,10 @@ import java.net.Socket;
 public class ServerRoutine implements Runnable {
 
     private Socket socket;
-    DataInputStream inStream;
-    DataOutputStream outStream;
+    private DataInputStream inStream;
+    private DataOutputStream outStream;
 
-    public ServerRoutine(Socket socket) throws IOException {
+    ServerRoutine(Socket socket) throws IOException {
         this.socket = socket;
         inStream = new DataInputStream(socket.getInputStream());
         outStream = new DataOutputStream(socket.getOutputStream());
@@ -23,10 +23,12 @@ public class ServerRoutine implements Runnable {
             boolean flag = true;
             while (flag) {
                 int thinkerId = 0;
-                int forkId = 0;
+                int forkId;
                 Code command = Code.values()[inStream.readInt()];
                 switch(command){
                     case REGISTRATE:
+                        inStream.readInt();
+                        inStream.readInt();
                         LabServer.registrate(outStream);
                         break;
                     case REQ_GET:
@@ -40,6 +42,7 @@ public class ServerRoutine implements Runnable {
                         LabServer.tryRelease(thinkerId, forkId, outStream);
                         break;
                     case EXIT:
+                        LabServer.exitThinker(thinkerId);
                         flag = false;
                         break;
                 }

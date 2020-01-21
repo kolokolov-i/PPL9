@@ -4,13 +4,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
 
 public class LabServer {
 
@@ -19,18 +14,12 @@ public class LabServer {
     private static final int total = 5;
     private static boolean[] forks;
     private static boolean[] actors;
-    private static int thinkersCount = 0;
-//    private static ArrayList<Fork> forks;
-//    private static Map<Integer, List<Fork>> distMap;
+    private static boolean[] seats;
 
     public static void main(String[] args) {
         forks = new boolean[total];
         actors = new boolean[total];
-//        distMap = new HashMap<>();
-//        for(int i = 0; i < forksCount; i++){
-//            char t = (char) ('A' + i);
-//            forks.add(new Fork(String.valueOf(t)));
-//        }
+        seats = new boolean[total];
         try (ServerSocket serverSocket = new ServerSocket(3232)) {
             while (true) {
                 Socket socket = serverSocket.accept();
@@ -46,78 +35,56 @@ public class LabServer {
         }
     }
 
-//    private static int getFreeCount(){
-//        return (int) forks.stream().filter(t -> !t.busy).count();
-//    }
-
-    private static void send(Code code, DataOutputStream outStream) throws IOException {
-        outStream.writeInt(code.ordinal());
-//        outStream.writeInt(data);
-        outStream.flush();
-    }
-
     static synchronized void tryLock(int thinkerId, int forkId, DataOutputStream out) throws IOException {
         boolean itLeft = thinkerId == forkId;
         if(itLeft){
-
+            if(actors[left(forkId)]){
+                send(Code.RES_REJECT, out);
+            }
+            else{
+                send(Code.RES_ACCEPT, out);
+                actors[thinkerId] = true;
+                forks[forkId] = true;
+            }
         }
         else{
             if(!forks[right(forkId)]){
                 send(Code.RES_ACCEPT, out);
-                return;
+                actors[thinkerId] = true;
+                forks[forkId] = true;
             }
             else{
                 send(Code.RES_REJECT, out);
-                return;
             }
         }
-
-        if (forks[forkId]) {
-            out.writeInt(Code.RES_REJECT.ordinal());
-            out.flush();
-            return;
-        }
-        if(actors[left(thinkerId)]){
-            out.writeInt(Code.RES_REJECT.ordinal());
-            out.flush();
-            return;
-        }
-//        if(distMap.containsKey(thinkerId)){
-//        }
-//        int freeCount = getFreeCount();
-//        if(freeCount<2){
-//            outStream.writeInt(Code.RES_REJECT.ordinal());
-//            outStream.flush();
-//            return;
-//        }
-//        List<Fork> forks = LabServer.forks.stream().filter(t -> !t.busy).limit(2).collect(Collectors.toList());
-//        outStream.writeInt(Code.RES_ACCEPT.ordinal());
-//        for (Fork t : forks) {
-//            t.busy = true;
-//            outStream.writeUTF(t.name);
-//        }
-//        distMap.put(thinkerId, forks);
-//        outStream.flush();
     }
 
-    static synchronized void tryRelease(int thinkerId, int forkId, DataOutputStream outStream) throws IOException {
-//        if(distMap.containsKey(thinkerId)){
-//            distMap.get(thinkerId).forEach(t -> t.busy = false);
-//            distMap.remove(thinkerId);
-//            outStream.writeInt(Code.RES_ACCEPT.ordinal());
-//        }
-//        else{
-//            outStream.writeInt(Code.RES_REJECT.ordinal());
-//        }
-//        outStream.flush();
+    static synchronized void tryRelease(int thinkerId, int forkId, DataOutputStream outStream) {
+        forks[forkId] = false;
+        if(thinkerId == left(forkId)){
+            actors[thinkerId] = false;
+        }
     }
 
     static synchronized void registrate(DataOutputStream outStream) throws IOException {
-        outStream.writeInt(thinkersCount);
-        outStream.writeInt(thinkersCount);
-        outStream.writeInt(right(thinkersCount));
-        thinkersCount++;
+        int thinkerId = 0;
+        for (int i = 0; i < total; i++) {
+            if(!seats[i]){
+                seats[i] = true;
+                thinkerId = i;
+                break;
+            }
+        }
+        outStream.writeInt(thinkerId);
+        outStream.writeInt(thinkerId);
+        int rf = right(thinkerId);
+        outStream.writeInt(rf);
         outStream.flush();
+    }
+
+    static synchronized void exitThinker(int thinkerId) {
+        actors[thinkerId] = false;
+        seats[thinkerId] = false;
     }
 
     private static int left(int t) {
@@ -125,5 +92,10 @@ public class LabServer {
     }
     private static int right(int t) {
         return (t == (total - 1)) ? 0 : (t + 1);
+    }
+
+    private static void send(Code code, DataOutputStream outStream) throws IOException {
+        outStream.writeInt(code.ordinal());
+        outStream.flush();
     }
 }

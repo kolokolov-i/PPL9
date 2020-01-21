@@ -24,10 +24,11 @@ public class Thinker {
         thinkerId = inp.readInt();
         forkLeft = inp.readInt();
         forkRight = inp.readInt();
+        cout.printf("%d %d <-> %d\n", thinkerId, forkLeft, forkRight);
         for (int i = 0; i < ORDER_COUNT; i++) {
             boolean flag;
             do {
-                cout.printf("Thinker %d думает\n", thinkerId);
+                cout.printf("Думатель %d думает\n", thinkerId);
                 Thread.sleep(rand.nextInt(500) + 500);
                 send(Code.REQ_GET, forkLeft);
                 flag = Code.RES_REJECT == Code.values()[inp.readInt()];
@@ -38,7 +39,7 @@ public class Thinker {
             while(flag);
             cout.println("Взял левую вилку");
             do {
-                cout.printf("Thinker %d думает\n", thinkerId);
+                cout.printf("Думатель %d думает\n", thinkerId);
                 Thread.sleep(rand.nextInt(500) + 500);
                 send(Code.REQ_GET, forkRight);
                 flag = Code.RES_REJECT == Code.values()[inp.readInt()];
@@ -48,13 +49,13 @@ public class Thinker {
             }
             while(flag);
             cout.println("Взял правую вилку");
-            cout.printf("Thinker %d кушает\n", thinkerId);
-            Thread.sleep(rand.nextInt(500) + 500);
+            cout.printf("Думатель %d кушает\n", thinkerId);
+            Thread.sleep(rand.nextInt(500) + 200);
             send(Code.REQ_RETURN, forkLeft);
-            cout.printf("Thinker %d освободил левую вилку\n", thinkerId);
+            cout.printf("Думатель %d освободил левую вилку\n", thinkerId);
             Thread.sleep(rand.nextInt(500) + 200);
             send(Code.REQ_RETURN, forkRight);
-            cout.printf("Thinker %d освободил правую вилку\n", thinkerId);
+            cout.printf("Думатель %d освободил правую вилку\n", thinkerId);
         }
         send(Code.EXIT, 0);
         socket.close();
