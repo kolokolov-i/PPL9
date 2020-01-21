@@ -6,10 +6,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 
 public class LabServer {
 
     private static ExecutorService threadPool = Executors.newFixedThreadPool(5);
+    private static final Semaphore semaphore = new Semaphore(1);
 
     private static final int total = 5;
     private static boolean[] forks;
@@ -35,7 +37,8 @@ public class LabServer {
         }
     }
 
-    static synchronized void tryLock(int thinkerId, int forkId, DataOutputStream out) throws IOException {
+    static synchronized void tryLock(int thinkerId, int forkId, DataOutputStream out) throws IOException, InterruptedException {
+        semaphore.acquire();
         boolean itLeft = thinkerId == forkId;
         if(itLeft){
             if(actors[left(forkId)]){
@@ -57,16 +60,20 @@ public class LabServer {
                 send(Code.RES_REJECT, out);
             }
         }
+        semaphore.release();
     }
 
-    static synchronized void tryRelease(int thinkerId, int forkId, DataOutputStream outStream) {
+    static synchronized void tryRelease(int thinkerId, int forkId, DataOutputStream outStream) throws InterruptedException {
+        semaphore.acquire();
         forks[forkId] = false;
         if(thinkerId == left(forkId)){
             actors[thinkerId] = false;
         }
+        semaphore.release();
     }
 
-    static synchronized void registrate(DataOutputStream outStream) throws IOException {
+    static synchronized void registrate(DataOutputStream outStream) throws IOException, InterruptedException {
+        semaphore.acquire();
         int thinkerId = 0;
         for (int i = 0; i < total; i++) {
             if(!seats[i]){
@@ -80,6 +87,7 @@ public class LabServer {
         int rf = right(thinkerId);
         outStream.writeInt(rf);
         outStream.flush();
+        semaphore.release();
     }
 
     static synchronized void exitThinker(int thinkerId) {

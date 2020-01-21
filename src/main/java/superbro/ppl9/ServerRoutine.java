@@ -7,12 +7,10 @@ import java.net.Socket;
 
 public class ServerRoutine implements Runnable {
 
-    private Socket socket;
     private DataInputStream inStream;
     private DataOutputStream outStream;
 
     ServerRoutine(Socket socket) throws IOException {
-        this.socket = socket;
         inStream = new DataInputStream(socket.getInputStream());
         outStream = new DataOutputStream(socket.getOutputStream());
     }
@@ -47,7 +45,7 @@ public class ServerRoutine implements Runnable {
                         break;
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
